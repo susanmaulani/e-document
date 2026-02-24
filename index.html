@@ -21,7 +21,7 @@
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
                     <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-slate-800">E-Document</h1>
+               <h1 class="text-2xl font-bold text-slate-800">E-Document</h1>
                 <p class="text-slate-500">Silakan login untuk mengakses dokumen</p>
             </div>
             
@@ -39,18 +39,18 @@
                 </button>
             </form>
             
-            <!--<div class="mt-6 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                <p class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider text-center">Data Demo Login</p>
+            <div class="mt-6 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                <p class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider text-center">User Login</p>
                 <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
-                    <div class="bg-white p-2 rounded border border-slate-100">
+                    <!--<div class="bg-white p-2 rounded border border-slate-100">
                         <strong>Admin:</strong> admin<br><strong>Pass:</strong> admin123
-                    </div>
+                    </div>-->
                     <div class="bg-white p-2 rounded border border-slate-100">
                         <strong>Guest:</strong> guest<br><strong>Pass:</strong> guest123
                     </div>
                 </div>
             </div>
-        </div>-->
+        </div>
     </div>
 
     <!-- Screen Aplikasi Utama -->
@@ -86,7 +86,7 @@
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-slate-500 ml-1 uppercase">Kategori</label>
                             <select id="file-category" class="w-full text-sm text-slate-600 border rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50">
-                               <option value="CP">Capaian Pembelajaran</option>
+                                <option value="CP">Capaian Pembelajaran</option>
                                 <option value="ATP">Alur Tujuan Pembelajaran</option>
                                 <option value="MA">Modul Ajar</option>
                             </select>
@@ -188,44 +188,52 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
-        // SETTING FIREBASE CONFIG ANDA DI SINI
+        // KONFIGURASI FIREBASE
         // ==========================================
-        let firebaseConfig;
-        try {
-            // Jika di lingkungan Canvas
-            firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            
-            // JIKA MENJALANKAN LOKAL/GITHUB: Hapus komentar di bawah ini dan isi dengan data dari Firebase Console
-            
-            firebaseConfig = {
-                apiKey: "AIzaSyBwOyoAla6goNs4VTFnUrD5cxFE1TLaImA",
-                authDomain: "e-administrasi-71c22.firebaseapp.com",
-                projectId: "e-administrasi-71c22YOUR_PROJECT_ID",
-                storageBucket: "e-administrasi-71c22.firebasestorage.app",
-                messagingSenderId: "99441542596",
-                appId: "1:99441542596:web:53b9da12c10dc1ad235091"
-            };
-            
-        } catch(e) {
-            console.warn("Config Firebase belum diatur.");
-            firebaseConfig = {};
+        let firebaseConfig = null;
+        
+        // 1. Coba ambil dari variabel lingkungan sistem (Canvas)
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            try {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } catch(e) { console.error("Format config sistem salah."); }
         }
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'docushare-web-app';
+        // 2. Jika Anda di GITHUB/LOKAL, isi data di bawah ini:
+        
+        firebaseConfig = {
+            apiKey: "AIzaSyBwOyoAla6goNs4VTFnUrD5cxFE1TLaImA",
+            authDomain: "e-administrasi-71c22.firebaseapp.com",
+            projectId: "e-administrasi-71c22",
+            storageBucket: "e-administrasi-71c22.firebasestorage.app",
+            messagingSenderId: "99441542596",
+            appId: "1:99441542596:web:53b9da12c10dc1ad235091",
+            measurementId: "G-39FT1104G7"
+        };
+        
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'docushare-v1';
         let db, auth;
 
-        // Inisialisasi hanya jika config tersedia
-        if (firebaseConfig.apiKey) {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            initFirebaseAuth();
+        // Inisialisasi Firebase hanya jika config valid
+        if (firebaseConfig && firebaseConfig.apiKey) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                initFirebaseAuth();
+            } catch(e) {
+                console.error("Firebase Gagal Load:", e);
+            }
+        } else {
+            console.warn("Aplikasi berjalan tanpa database cloud. Silakan setting Firebase Config.");
         }
 
         let files = [];
         let currentUserData = null;
 
         async function initFirebaseAuth() {
+            if (!auth) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -237,7 +245,7 @@
                     if (user) setupFirestoreListener();
                 });
             } catch (err) {
-                console.error("Firebase Auth Error:", err);
+                console.error("Auth Error:", err);
             }
         }
 
@@ -247,17 +255,20 @@
             onSnapshot(publicDataRef, (snapshot) => {
                 files = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderFiles();
-            }, (error) => console.error(error));
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                showToast("Gagal mengambil data dari Cloud.");
+            });
         }
 
         // GLOBAL ACTIONS
         window.handleUpload = async function() {
-            if (!db) return showToast("Database belum terhubung (Cek Firebase Config)");
+            if (!db) return showToast("Error: Database Cloud belum terhubung.");
             const fileInput = document.getElementById('file-input');
             const file = fileInput.files[0];
             const btn = document.getElementById('upload-btn');
 
-            if (!file) return showToast("Pilih file!");
+            if (!file) return showToast("Pilih file terlebih dahulu!");
             if (file.size > 800000) return showToast("File terlalu besar (Maks 800KB)");
 
             btn.disabled = true;
@@ -279,10 +290,10 @@
                         createdAt: Date.now()
                     };
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'documents'), docData);
-                    showToast("Berhasil disimpan!");
+                    showToast("Dokumen tersimpan di Cloud!");
                     fileInput.value = '';
                 } catch (err) {
-                    showToast("Gagal: " + err.message);
+                    showToast("Gagal simpan: " + err.message);
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = '<i data-lucide="cloud-upload"></i> Simpan ke Cloud';
@@ -294,9 +305,10 @@
 
         window.deleteFile = async function(id) {
             if (currentUserData?.role !== 'admin' || !db) return;
+            if (!confirm("Hapus dokumen ini dari cloud?")) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'documents', id));
-                showToast("Dihapus.");
+                showToast("Terhapus.");
             } catch (err) { showToast("Gagal hapus."); }
         };
 
@@ -312,10 +324,10 @@
             const p = document.getElementById('password').value;
             
             if (CREDENTIALS[u] && CREDENTIALS[u].password === p) {
-                currentUserData = CREDENTIALS[u];
-                localStorage.setItem('docushare_session', JSON.stringify(currentUserData));
-                applySession(currentUserData);
-                showToast("Login Berhasil!");
+                const userData = CREDENTIALS[u];
+                localStorage.setItem('docushare_session', JSON.stringify(userData));
+                applySession(userData);
+                showToast("Selamat Datang, " + userData.name);
             } else {
                 showToast("Username atau Password salah!");
             }
@@ -323,7 +335,7 @@
 
         function applySession(userData) {
             currentUserData = userData;
-            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').classList.remove('hidden');
             document.getElementById('user-display-name').innerText = userData.name;
             document.getElementById('user-display-role').innerText = userData.role;
@@ -342,7 +354,7 @@
             const cat = document.getElementById('filter-category').value;
             
             const filtered = files.filter(f => {
-                const mSearch = f.name.toLowerCase().includes(search) || f.uploader.toLowerCase().includes(search) || f.academicYear.includes(search);
+                const mSearch = f.name.toLowerCase().includes(search) || f.uploader.toLowerCase().includes(search);
                 const mCat = cat === 'all' || f.category === cat;
                 return mSearch && mCat;
             });
@@ -351,20 +363,23 @@
             document.getElementById('empty-state').classList.toggle('hidden', filtered.length > 0);
             
             list.innerHTML = filtered.map(f => `
-                <tr class="hover:bg-slate-50">
+                <tr class="hover:bg-slate-50 transition-colors">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <i data-lucide="${getFileIcon(f.type)}" class="text-blue-500 w-5 h-5"></i>
-                            <div><div class="text-sm font-semibold">${f.name}</div><div class="text-[10px] text-slate-400">${f.size}</div></div>
+                            <div>
+                                <div class="text-sm font-semibold text-slate-700">${f.name}</div>
+                                <div class="text-[10px] text-slate-400">${f.size} • ${f.date}</div>
+                            </div>
                         </div>
                     </td>
                     <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">${f.category}</span></td>
-                    <td class="px-6 py-4 text-sm text-slate-600 italic">${f.academicYear}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${f.academicYear}</td>
                     <td class="px-6 py-4 text-xs font-medium text-slate-700">${f.uploader}</td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                            <button onclick="previewFile('${f.id}')" class="p-2 border rounded-lg hover:bg-white"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                            ${currentUserData?.role === 'admin' ? `<button onclick="deleteFile('${f.id}')" class="p-2 text-red-400 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                            <button onclick="previewFile('${f.id}')" class="p-2 border border-slate-200 rounded-lg hover:bg-white hover:shadow-sm transition-all"><i data-lucide="eye" class="w-4 h-4 text-slate-600"></i></button>
+                            ${currentUserData?.role === 'admin' ? `<button onclick="deleteFile('${f.id}')" class="p-2 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
                         </div>
                     </td>
                 </tr>
@@ -378,28 +393,48 @@
             const modal = document.getElementById('preview-modal');
             const content = document.getElementById('preview-content');
             document.getElementById('modal-title').innerText = f.name;
-            content.innerHTML = f.type.startsWith('image/') ? `<img src="${f.data}" class="max-h-[70vh] rounded shadow">` : `<embed src="${f.data}" type="${f.type}" class="w-full h-[70vh]">`;
+            
+            if (f.type.startsWith('image/')) {
+                content.innerHTML = `<img src="${f.data}" class="max-h-[70vh] rounded-lg shadow-lg border border-white">`;
+            } else {
+                content.innerHTML = `<iframe src="${f.data}" class="w-full h-[70vh] rounded-lg border-none"></iframe>`;
+            }
+            
             modal.classList.remove('hidden');
             lucide.createIcons();
         };
 
         window.closePreview = () => document.getElementById('preview-modal').classList.add('hidden');
+        
         function formatBytes(b) {
             if (b < 1024) return b + ' B';
             if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
             return (b/1048576).toFixed(1) + ' MB';
         }
-        function getFileIcon(t) { return t.startsWith('image/') ? 'image' : t === 'application/pdf' ? 'file-text' : 'file'; }
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = m;
-            t.classList.remove('translate-y-20');
-            setTimeout(() => t.classList.add('translate-y-20'), 3000);
+        
+        function getFileIcon(t) { 
+            if (t.startsWith('image/')) return 'image';
+            if (t === 'application/pdf') return 'file-text';
+            return 'file'; 
         }
 
-        const saved = localStorage.getItem('docushare_session');
-        if (saved) applySession(JSON.parse(saved));
-        lucide.createIcons();
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            const msg = document.getElementById('toast-msg');
+            msg.innerText = m;
+            t.classList.remove('translate-y-20');
+            setTimeout(() => t.classList.add('translate-y-20'), 3500);
+        }
+
+        // Jalankan saat load
+        window.onload = () => {
+            const saved = localStorage.getItem('docushare_session');
+            if (saved) {
+                try { applySession(JSON.parse(saved)); } 
+                catch(e) { localStorage.removeItem('docushare_session'); }
+            }
+            lucide.createIcons();
+        };
     </script>
 </body>
 </html>
