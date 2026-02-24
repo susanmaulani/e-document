@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- Screen Login -->
+    <div id="login-screen" class="flex items-center justify-center min-h-screen p-4">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">E-Document</h1>
+                <p class="text-slate-500">Silakan login untuk mengakses dokumen</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="Masukkan username">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    Login
+                </button>
+            </form>
+            
+            <!--<div class="mt-6 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                <p class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider text-center">Data Demo Login</p>
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <div class="bg-white p-2 rounded border border-slate-100">
+                        <strong>Admin:</strong> admin<br><strong>Pass:</strong> admin123
+                    </div>
+                    <div class="bg-white p-2 rounded border border-slate-100">
+                        <strong>Guest:</strong> guest<br><strong>Pass:</strong> guest123
+                    </div>
+                </div>
+            </div>
+        </div>-->
+    </div>
+
+    <!-- Screen Aplikasi Utama -->
+    <div id="app-screen" class="hidden">
+        <nav class="glass sticky top-0 z-30 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i data-lucide="cloud" class="text-blue-600 w-6 h-6"></i>
+                <span class="font-bold text-xl text-slate-800">DocuShare</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p id="user-display-name" class="text-sm font-semibold text-slate-700">User</p>
+                    <p id="user-display-role" class="text-xs text-slate-500 capitalize">Role</p>
+                </div>
+                <button onclick="logout()" class="p-2 hover:bg-red-50 text-red-500 rounded-full transition-colors">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </nav>
+
+        <main class="max-w-6xl mx-auto p-6">
+            <!-- Bagian Upload (Hanya Admin) -->
+            <section id="admin-actions" class="hidden mb-8">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="upload-cloud" class="w-5 h-5 text-blue-500"></i> Unggah Dokumen Baru (Online)
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-500 ml-1 uppercase">File</label>
+                            <input type="file" id="file-input" class="w-full text-sm text-slate-500 border rounded-lg p-2 focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-500 ml-1 uppercase">Kategori</label>
+                            <select id="file-category" class="w-full text-sm text-slate-600 border rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50">
+                               <option value="CP">Capaian Pembelajaran</option>
+                                <option value="ATP">Alur Tujuan Pembelajaran</option>
+                                <option value="MA">Modul Ajar</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-500 ml-1 uppercase">Thn Ajaran</label>
+                            <select id="academic-year" class="w-full text-sm text-slate-600 border rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50">
+                                 <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-500 ml-1 uppercase">Pengunggah</label>
+                            <select id="uploader-name" class="w-full text-sm text-slate-600 border rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50">
+                                <option value="Guru">Susan Maulani</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button id="upload-btn" onclick="handleUpload()" class="w-full bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-sm disabled:bg-slate-400">
+                                <i data-lucide="cloud-upload" class="w-4 h-4"></i> Simpan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter -->
+            <section class="mb-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="search-input" oninput="renderFiles()" class="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Cari di cloud...">
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="filter-category" onchange="renderFiles()" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="all">Semua Kategori</option>
+                                <option value="CP">Capaian Pembelajaran</option>
+                                <option value="ATP">Alur Tujuan Pembelajaran</option>
+                                <option value="MA">Modul Ajar</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabel Dokumen -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                    <h2 class="font-bold text-slate-800 text-lg">Daftar Dokumen Cloud</h2>
+                    <span id="file-count" class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-medium">0 File</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Nama File</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Kategori</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Thn Ajaran</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Pengunggah</th>
+                                <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="file-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <div id="empty-state" class="py-20 text-center">
+                    <i data-lucide="cloud-off" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+                    <p class="text-slate-500">Belum ada file di database online.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closePreview()"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
+                <h3 id="modal-title" class="font-bold text-slate-800 truncate text-sm">Preview</h3>
+                <button onclick="closePreview()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+            </div>
+            <div id="preview-content" class="flex-1 bg-slate-100 p-4 overflow-auto flex items-center justify-center"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 transition-transform duration-300 pointer-events-none">
+        <div id="toast-body" class="bg-slate-800 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+            <span id="toast-msg">Pesan...</span>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // SETTING FIREBASE CONFIG ANDA DI SINI
+        // ==========================================
+        let firebaseConfig;
+        try {
+            // Jika di lingkungan Canvas
+            firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            
+            // JIKA MENJALANKAN LOKAL/GITHUB: Hapus komentar di bawah ini dan isi dengan data dari Firebase Console
+            
+            firebaseConfig = {
+                apiKey: "AIzaSyBwOyoAla6goNs4VTFnUrD5cxFE1TLaImA",
+                authDomain: "e-administrasi-71c22.firebaseapp.com",
+                projectId: "e-administrasi-71c22YOUR_PROJECT_ID",
+                storageBucket: "e-administrasi-71c22.firebasestorage.app",
+                messagingSenderId: "99441542596",
+                appId: "1:99441542596:web:53b9da12c10dc1ad235091"
+            };
+            
+        } catch(e) {
+            console.warn("Config Firebase belum diatur.");
+            firebaseConfig = {};
+        }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'docushare-web-app';
+        let db, auth;
+
+        // Inisialisasi hanya jika config tersedia
+        if (firebaseConfig.apiKey) {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            initFirebaseAuth();
+        }
+
+        let files = [];
+        let currentUserData = null;
+
+        async function initFirebaseAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) setupFirestoreListener();
+                });
+            } catch (err) {
+                console.error("Firebase Auth Error:", err);
+            }
+        }
+
+        function setupFirestoreListener() {
+            if (!db) return;
+            const publicDataRef = collection(db, 'artifacts', appId, 'public', 'data', 'documents');
+            onSnapshot(publicDataRef, (snapshot) => {
+                files = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderFiles();
+            }, (error) => console.error(error));
+        }
+
+        // GLOBAL ACTIONS
+        window.handleUpload = async function() {
+            if (!db) return showToast("Database belum terhubung (Cek Firebase Config)");
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const btn = document.getElementById('upload-btn');
+
+            if (!file) return showToast("Pilih file!");
+            if (file.size > 800000) return showToast("File terlalu besar (Maks 800KB)");
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Mengunggah...';
+            lucide.createIcons();
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const docData = {
+                        name: file.name,
+                        category: document.getElementById('file-category').value,
+                        academicYear: document.getElementById('academic-year').value,
+                        uploader: document.getElementById('uploader-name').value,
+                        type: file.type,
+                        size: formatBytes(file.size),
+                        date: new Date().toLocaleDateString('id-ID'),
+                        data: e.target.result,
+                        createdAt: Date.now()
+                    };
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'documents'), docData);
+                    showToast("Berhasil disimpan!");
+                    fileInput.value = '';
+                } catch (err) {
+                    showToast("Gagal: " + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="cloud-upload"></i> Simpan ke Cloud';
+                    lucide.createIcons();
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.deleteFile = async function(id) {
+            if (currentUserData?.role !== 'admin' || !db) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'documents', id));
+                showToast("Dihapus.");
+            } catch (err) { showToast("Gagal hapus."); }
+        };
+
+        // UI & LOGIN LOGIC
+        const CREDENTIALS = {
+            'admin': { password: 'admin123', name: 'Administrator', role: 'admin' },
+            'guest': { password: 'guest123', name: 'Guest User', role: 'guest' }
+        };
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value.trim().toLowerCase();
+            const p = document.getElementById('password').value;
+            
+            if (CREDENTIALS[u] && CREDENTIALS[u].password === p) {
+                currentUserData = CREDENTIALS[u];
+                localStorage.setItem('docushare_session', JSON.stringify(currentUserData));
+                applySession(currentUserData);
+                showToast("Login Berhasil!");
+            } else {
+                showToast("Username atau Password salah!");
+            }
+        });
+
+        function applySession(userData) {
+            currentUserData = userData;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = userData.name;
+            document.getElementById('user-display-role').innerText = userData.role;
+            if (userData.role === 'admin') document.getElementById('admin-actions').classList.remove('hidden');
+            renderFiles();
+        }
+
+        window.logout = () => {
+            localStorage.removeItem('docushare_session');
+            location.reload();
+        };
+
+        window.renderFiles = () => {
+            const list = document.getElementById('file-list');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const cat = document.getElementById('filter-category').value;
+            
+            const filtered = files.filter(f => {
+                const mSearch = f.name.toLowerCase().includes(search) || f.uploader.toLowerCase().includes(search) || f.academicYear.includes(search);
+                const mCat = cat === 'all' || f.category === cat;
+                return mSearch && mCat;
+            });
+
+            document.getElementById('file-count').innerText = `${filtered.length} File`;
+            document.getElementById('empty-state').classList.toggle('hidden', filtered.length > 0);
+            
+            list.innerHTML = filtered.map(f => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="${getFileIcon(f.type)}" class="text-blue-500 w-5 h-5"></i>
+                            <div><div class="text-sm font-semibold">${f.name}</div><div class="text-[10px] text-slate-400">${f.size}</div></div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">${f.category}</span></td>
+                    <td class="px-6 py-4 text-sm text-slate-600 italic">${f.academicYear}</td>
+                    <td class="px-6 py-4 text-xs font-medium text-slate-700">${f.uploader}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="previewFile('${f.id}')" class="p-2 border rounded-lg hover:bg-white"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                            ${currentUserData?.role === 'admin' ? `<button onclick="deleteFile('${f.id}')" class="p-2 text-red-400 hover:bg-red-50 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        };
+
+        window.previewFile = (id) => {
+            const f = files.find(x => x.id === id);
+            if (!f) return;
+            const modal = document.getElementById('preview-modal');
+            const content = document.getElementById('preview-content');
+            document.getElementById('modal-title').innerText = f.name;
+            content.innerHTML = f.type.startsWith('image/') ? `<img src="${f.data}" class="max-h-[70vh] rounded shadow">` : `<embed src="${f.data}" type="${f.type}" class="w-full h-[70vh]">`;
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closePreview = () => document.getElementById('preview-modal').classList.add('hidden');
+        function formatBytes(b) {
+            if (b < 1024) return b + ' B';
+            if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+            return (b/1048576).toFixed(1) + ' MB';
+        }
+        function getFileIcon(t) { return t.startsWith('image/') ? 'image' : t === 'application/pdf' ? 'file-text' : 'file'; }
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = m;
+            t.classList.remove('translate-y-20');
+            setTimeout(() => t.classList.add('translate-y-20'), 3000);
+        }
+
+        const saved = localStorage.getItem('docushare_session');
+        if (saved) applySession(JSON.parse(saved));
+        lucide.createIcons();
+    </script>
+</body>
+</html>
